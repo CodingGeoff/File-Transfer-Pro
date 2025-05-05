@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light dark">
+    <title>云文件共享平台</title>
+    <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+    :root {
+        --bg: #f8fafc;
+        --surface: #ffffff;
+        --text: #1e293b;
+        --primary: #2563eb;
+        --success: #16a34a;
+        --border: #e2e8f0;
+        --hover-bg: #f1f5f9;
+        --radius: 12px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+        :root {
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --text: #f8fafc;
+            --primary: #3b82f6;
+            --success: #22c55e;
+            --border: #334155;
+            --hover-bg: #1e293b;
+        }
+    }
+
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        transition: background-color 0.2s, color 0.2s;
+    }
+
+    body {
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        line-height: 1.6;
+        background: var(--bg);
+        color: var(--text);
+        padding: 1rem;
+    }
+
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .card {
+        background: var(--surface);
+        border-radius: var(--radius);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+
+    .header {
+        padding: 2rem;
+        background: var(--primary);
+        color: white;
+        text-align: center;
+    }
+
+    .upload-area {
+        padding: 3rem 2rem;
+        margin: 2rem;
+        border: 2px dashed var(--border);
+        border-radius: var(--radius);
+        text-align: center;
+        cursor: pointer;
+        transition: border-color 0.2s;
+    }
+
+    .upload-area:hover {
+        border-color: var(--primary);
+        background: var(--hover-bg);
+    }
+
+    .file-list {
+        margin: 0 2rem;
+    }
+
+    .file-item {
+        display: flex;
+        align-items: center;
+        padding: 1.25rem;
+        border-bottom: 1px solid var(--border);
+        gap: 1.5rem;
+    }
+
+    .file-item:hover {
+        background: var(--hover-bg);
+    }
+
+    .file-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .file-name {
+        font-weight: 500;
+        font-size: 1.05rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .file-meta {
+        font-size: 0.875rem;
+        color: var(--text);
+        opacity: 0.8;
+        display: flex;
+        gap: 1.5rem;
+        margin-top: 0.5rem;
+    }
+
+    .btn {
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-weight: 500;
+        transition: transform 0.2s;
+    }
+
+    .btn-download {
+        background: var(--success);
+        color: white;
+    }
+
+    .btn-download:hover {
+        transform: translateY(-1px);
+    }
+
+    .chat-box {
+        margin: 2rem;
+    }
+
+    .message {
+        background: var(--hover-bg);
+        padding: 1.25rem;
+        border-radius: 8px;
+        margin: 1rem 0;
+    }
+
+    .message-time {
+        font-size: 0.875rem;
+        opacity: 0.8;
+        margin-bottom: 0.5rem;
+    }
+
+    .alert {
+        padding: 1rem;
+        margin: 2rem;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .alert-success {
+        background: #dcfce7;
+        color: #166534;
+        border: 1px solid #bbf7d0;
+    }
+
+    .alert-error {
+        background: #fee2e2;
+        color: #991b1b;
+        border: 1px solid #fecaca;
+    }
+
+    @media (max-width: 768px) {
+        .file-item {
+            flex-direction: column;
+            align-items: start;
+            gap: 1rem;
+        }
+        
+        .btn {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="header">
+                <h1>云文件共享平台</h1>
+                <p style="margin-top:0.5rem; opacity:0.9;">{{ files|length }} 个文件</p>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                    <div class="alert alert-{{ 'success' if category == 'message' else 'error' }}">
+                        <i class="fas fa-{{ 'check-circle' if category == 'message' else 'exclamation-triangle' }}"></i>
+                        {{ message }}
+                    </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <form method="post" enctype="multipart/form-data" action="/upload">
+                <label class="upload-area">
+                    <input type="file" name="files" multiple 
+                           webkitdirectory directory
+                           style="display: none;"
+                           onchange="this.form.submit()">
+                    <i class="fas fa-cloud-arrow-up fa-3x" style="opacity:0.8; margin-bottom:1.5rem;"></i>
+                    <h3 style="margin-bottom:0.5rem;">拖放文件夹至此或点击选择</h3>
+                    <p style="opacity:0.8;">支持子目录结构，自动保留文件路径</p>
+                </label>
+            </form>
+
+            <div class="file-list">
+                {% for file in files %}
+                <div class="file-item">
+                    <div class="file-info">
+                        <div class="file-name">{{ file.name }}</div>
+                        <div class="file-meta">
+                            <span><i class="fas fa-file"></i> {{ file.size }}</span>
+                            <span><i class="fas fa-calendar"></i> {{ file.date }}</span>
+                        </div>
+                    </div>
+                    <a href="{{ url_for('download_file', filename=file.name) | urlencode }}"
+                       class="btn btn-download"
+                       download="{{ file.name }}">
+                        <i class="fas fa-download"></i>
+                        下载
+                    </a>
+                </div>
+                {% else %}
+                <div class="upload-area" style="background:transparent;">
+                    <i class="fas fa-folder-open fa-3x" style="opacity:0.6;"></i>
+                    <h3 style="margin-top:1rem;">暂无文件</h3>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="chat-box">
+                <div class="card" style="margin:2rem;">
+                    <div style="padding:1.5rem; border-bottom:1px solid var(--border);">
+                        <h3>实时聊天室</h3>
+                    </div>
+                    <div id="chat-messages" style="max-height:400px; overflow-y:auto; padding:1.5rem;">
+                        {% for msg in chat_messages %}
+                        <div class="message">
+                            <div class="message-time">{{ msg.time }}</div>
+                            <div>{{ msg.content }}</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <form id="chat-form" style="display:flex; gap:1rem; padding:1.5rem; border-top:1px solid var(--border);">
+                        <input type="text" name="message" 
+                               placeholder="输入消息..."
+                               style="flex:1; padding:1rem; border-radius:8px; border:1px solid var(--border); background:var(--surface); color:var(--text);">
+                        <button type="submit" class="btn" style="background:var(--primary); color:white;">
+                            发送
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // 实时聊天功能
+    const chatForm = document.getElementById('chat-form')
+    const chatMessages = document.getElementById('chat-messages')
+
+    async function updateChat() {
+        try {
+            const res = await fetch('/get_messages')
+            const data = await res.json()
+            chatMessages.innerHTML = data.messages.map(msg => `
+                <div class="message">
+                    <div class="message-time">${msg.time}</div>
+                    <div>${msg.content}</div>
+                </div>
+            `).join('')
+            chatMessages.scrollTop = chatMessages.scrollHeight
+        } catch (error) {
+            console.error('加载消息失败:', error)
+        }
+    }
+
+    chatForm.addEventListener('submit', async (e) => {
+        e.preventDefault()
+        const formData = new FormData(chatForm)
+        try {
+            await fetch('/chat', {
+                method: 'POST',
+                body: formData
+            })
+            chatForm.reset()
+            await updateChat()
+        } catch (error) {
+            console.error('发送失败:', error)
+        }
+    })
+
+    // 自动更新消息
+    setInterval(updateChat, 3000)
+    updateChat()
+
+    // 拖放上传处理
+    const dropZone = document.querySelector('.upload-area')
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault()
+        dropZone.style.borderColor = 'var(--primary)'
+    })
+
+    dropZone.addEventListener('dragleave', () => {
+        dropZone.style.borderColor = 'var(--border)'
+    })
+
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault()
+        dropZone.style.borderColor = 'var(--border)'
+        const files = e.dataTransfer.files
+        if(files.length > 0) {
+            const input = document.querySelector('input[type="file"]')
+            input.files = files
+            input.form.submit()
+        }
+    })
+    </script>
+</body>
+</html>

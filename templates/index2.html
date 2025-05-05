@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<!--<html lang="zh-CN">-->
+<!--<head>-->
+<!--    <meta charset="UTF-8">-->
+<!--    <meta name="viewport" content="width=device-width, initial-scale=1.0">-->
+<!--    <title>文件共享服务</title>-->
+<!--    <base href="/">-->
+<!--    <link href="https://cdn.bootcdn.net/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">-->
+<!--    <link href="/static/css/style.css" rel="stylesheet">-->
+<!--</head>-->
+<!--<body class="bg-light">-->
+<!--    <div class="container mt-5">-->
+<!--        <div class="card shadow">-->
+<!--            <div class="card-header bg-primary text-white">-->
+<!--                <h3 class="mb-0">文件共享服务</h3>-->
+<!--            </div>-->
+
+<!--            <div class="card-body">-->
+<!--                &lt;!&ndash; 上传表单 &ndash;&gt;-->
+<!--                <form method="post" enctype="multipart/form-data" action="/upload" class="mb-4">-->
+<!--                    <div class="input-group">-->
+<!--                        <input type="file" class="form-control" name="files" multiple>-->
+<!--                        <button type="submit" class="btn btn-success">上传文件</button>-->
+<!--                    </div>-->
+<!--                    <small class="form-text text-muted">支持多选文件（Ctrl+点击选择多个文件）</small>-->
+<!--                </form>-->
+
+<!--                &lt;!&ndash; 文件列表 &ndash;&gt;-->
+<!--                <h5 class="mb-3">已存储的文件</h5>-->
+<!--                <div class="list-group">-->
+<!--                    {% for file in files %}-->
+<!--                    <div class="list-group-item d-flex justify-content-between align-items-center">-->
+<!--                        <div>-->
+<!--                            <span class="badge bg-secondary me-2">{{ file.size }}</span>-->
+<!--                            {{ file.name }}-->
+<!--                        </div>-->
+<!--                        <a href="{{ url_for('download_file', filename=file.name) }}"-->
+<!--                           class="btn btn-sm btn-primary">下载</a>-->
+<!--                    </div>-->
+<!--                    {% else %}-->
+<!--                    <div class="alert alert-info">暂无文件</div>-->
+<!--                    {% endfor %}-->
+<!--                </div>-->
+
+<!--                &lt;!&ndash; 聊天窗口 &ndash;&gt;-->
+<!--                <div class="mt-4">-->
+<!--                    <div class="card">-->
+<!--                        <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">-->
+<!--                            <span>聊天室</span>-->
+<!--                            <button class="btn btn-sm btn-light" onclick="loadMessages()">-->
+<!--                                刷新消息-->
+<!--                            </button>-->
+<!--                        </div>-->
+<!--                        <div class="card-body p-2" style="height: 300px; overflow-y: auto" id="chat-box">-->
+<!--                            &lt;!&ndash; 消息通过JavaScript动态加载 &ndash;&gt;-->
+<!--                        </div>-->
+<!--                        <div class="card-footer">-->
+<!--                            <form action="/chat" method="post" class="input-group">-->
+<!--                                <input type="text" name="message" class="form-control" placeholder="输入消息...">-->
+<!--                                <button type="submit" class="btn btn-primary">发送</button>-->
+<!--                            </form>-->
+<!--                        </div>-->
+<!--                    </div>-->
+<!--                </div>-->
+<!--            </div>-->
+<!--        </div>-->
+<!--    </div>-->
+
+<!--    <script src="https://cdn.bootcdn.net/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>-->
+<!--    <script>-->
+<!--    // 自动滚动到底部-->
+<!--    function scrollChat() {-->
+<!--        const chatBox = document.getElementById('chat-box');-->
+<!--        chatBox.scrollTop = chatBox.scrollHeight;-->
+<!--    }-->
+
+<!--    // 加载消息函数-->
+<!--    function loadMessages() {-->
+<!--        fetch('/get_messages')-->
+<!--            .then(res => res.json())-->
+<!--            .then(data => {-->
+<!--                const chatBox = document.getElementById('chat-box');-->
+<!--                chatBox.innerHTML = data.messages.map(msg => `-->
+<!--                    <div class="mb-2 position-relative">-->
+<!--                        <small class="text-muted">${msg.time}</small>-->
+<!--                        <div class="alert alert-secondary p-2 mb-0">-->
+<!--                            ${msg.content}-->
+<!--                            <button class="btn btn-sm btn-link p-0 copy-btn"-->
+<!--                                    style="position: absolute; right: 8px; top: 8px"-->
+<!--                                    title="复制内容">-->
+<!--                                ⎘-->
+<!--                            </button>-->
+<!--                        </div>-->
+<!--                    </div>-->
+<!--                `).join('');-->
+<!--                scrollChat();-->
+<!--            });-->
+<!--    }-->
+
+<!--    // 表单提交处理-->
+<!--    document.querySelector('form[action="/chat"]').addEventListener('submit', function(e) {-->
+<!--        e.preventDefault();-->
+<!--        const formData = new FormData(this);-->
+
+<!--        fetch('/chat', {-->
+<!--            method: 'POST',-->
+<!--            body: formData-->
+<!--        }).then(() => {-->
+<!--            loadMessages();-->
+<!--            this.reset();-->
+<!--        });-->
+<!--    });-->
+
+<!--    // 复制功能-->
+<!--    document.addEventListener('click', (e) => {-->
+<!--        if (e.target.classList.contains('copy-btn')) {-->
+<!--            const content = e.target.parentElement.textContent.trim().slice(0, -1)-->
+<!--            navigator.clipboard.writeText(content)-->
+<!--                .then(() => alert('已复制到剪贴板'))-->
+<!--                .catch(() => alert('复制失败'))-->
+<!--        }-->
+<!--    })-->
+
+<!--    // 初始加载-->
+<!--    loadMessages();-->
+<!--    </script>-->
+<!--</body>-->
+<!--</html>-->
+
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文件共享服务</title>
+    <base href="/">
+    <link href="https://cdn.bootcdn.net/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/static/css/style.css?v=1" rel="stylesheet"> <!-- 添加版本号避免缓存 -->
+
+
+        <style>
+    /* 现代设计风格核心样式 */
+    :root {
+        --primary: #6366f1;
+        --secondary: #64748b;
+        --success: #22c55e;
+        --info: #3b82f6;
+        --background: #f8fafc;
+        --surface: #ffffff;
+        --text: #1e293b;
+    }
+
+    body {
+        margin: 0;
+        padding: 2rem;
+        font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        line-height: 1.6;
+        background: var(--background);
+        color: var(--text);
+        min-height: 100vh;
+    }
+
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .card {
+        background: var(--surface);
+        border-radius: 16px;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+        margin-bottom: 2rem;
+        overflow: hidden;
+        transition: transform 0.2s;
+        border: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .card:hover {
+        transform: translateY(-2px);
+    }
+
+    .card-header {
+        padding: 1.5rem;
+        background: linear-gradient(135deg, var(--primary) 0%, #4f46e5 100%);
+        color: white;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .card-header h3 {
+        margin: 0;
+        font-weight: 600;
+        letter-spacing: -0.025em;
+    }
+
+    .card-body {
+        padding: 1.5rem;
+    }
+
+    .input-group {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    input[type="file"],
+    input[type="text"] {
+        flex: 1;
+        padding: 0.75rem 1rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: all 0.2s;
+    }
+
+    input:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+    }
+
+    button {
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .btn-success {
+        background: linear-gradient(135deg, var(--success) 0%, #16a34a 100%);
+        color: white;
+    }
+
+    .btn-success:hover {
+        opacity: 0.9;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, var(--info) 0%, #2563eb 100%);
+        color: white;
+    }
+
+    .list-group {
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1px solid #e2e8f0;
+    }
+
+    .list-group-item {
+        padding: 1rem;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: background 0.2s;
+    }
+
+    .list-group-item:hover {
+        background: #f8fafc;
+    }
+
+    .list-group-item:last-child {
+        border-bottom: none;
+    }
+
+    .alert {
+        padding: 1rem;
+        border-radius: 8px;
+        margin: 1rem 0;
+    }
+
+    .alert-info {
+        background: #f1f5f9;
+        color: #64748b;
+    }
+
+    .alert-secondary {
+        background: var(--surface);
+        border: 1px solid #e2e8f0;
+        position: relative;
+        padding-right: 2.5rem;
+    }
+
+    .copy-btn {
+        position: absolute;
+        right: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        padding: 0.25rem;
+        cursor: pointer;
+        color: var(--secondary);
+        transition: color 0.2s;
+    }
+
+    .copy-btn:hover {
+        color: var(--primary);
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        background: var(--secondary);
+        color: white;
+        border-radius: 20px;
+        font-size: 0.85rem;
+    }
+
+    /* 加载动画 */
+    .spinner {
+        animation: spin 1s linear infinite;
+        width: 1.25rem;
+        height: 1.25rem;
+        border: 2px solid rgba(255,255,255,0.3);
+        border-radius: 50%;
+        border-top-color: white;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    /* 响应式设计 */
+    @media (max-width: 768px) {
+        body {
+            padding: 1rem;
+        }
+
+        .card-header {
+            padding: 1rem;
+        }
+
+        .input-group {
+            flex-direction: column;
+        }
+
+        button {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+
+    /* 深色模式适配 */
+    @media (prefers-color-scheme: dark) {
+        :root {
+            --background: #0f172a;
+            --surface: #1e293b;
+            --text: #f8fafc;
+        }
+
+        input {
+            background: #334155;
+            border-color: #475569;
+            color: white;
+        }
+
+        .list-group-item:hover {
+            background: #1e293b;
+        }
+    }
+    </style>
+
+</head>
+<body class="bg-light">
+    <div class="container mt-5">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h3 class="mb-0">文件共享服务</h3>
+            </div>
+
+            <div class="card-body">
+                <!-- 上传表单 -->
+                <form method="post" enctype="multipart/form-data" action="/upload" class="mb-4">
+                    <div class="input-group">
+                        <input type="file" class="form-control" name="files" multiple>
+                        <button type="submit" class="btn btn-success">上传文件</button>
+                    </div>
+                    <small class="form-text text-muted">支持多选文件（Ctrl+点击选择多个文件）</small>
+                </form>
+
+
+                <div class="upload-card" id="dropZone">
+                    <form method="post" enctype="multipart/form-data" action="/upload" id="uploadForm">
+                        <label class="upload-label">
+                            <input type="file" name="files" id="fileInput" 
+                                webkitdirectory directory multiple hidden
+                                onchange="document.getElementById('uploadForm').submit()">
+                            <div class="upload-content">
+                                <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                                <div class="upload-text">
+                                    <p>拖放文件夹至此或点击选择</p>
+                                    <small>支持文件夹及子目录上传</small>
+                                </div>
+                            </div>
+                        </label>
+                    </form>
+                </div>
+
+
+                <!-- 文件列表 -->
+                <h5 class="mb-3">已存储的文件</h5>
+                <div class="list-group">
+                    {% for file in files %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="badge bg-secondary me-2">{{ file.size }}</span>
+                            {{ file.name }}
+                        </div>
+                        <a href="{{ url_for('download_file', filename=file.name) }}"
+                           class="btn btn-sm btn-primary">下载</a>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">暂无文件</div>
+                    {% endfor %}
+                </div>
+
+                <!-- 聊天窗口 -->
+                <div class="mt-4">
+                    <div class="card">
+                        <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                            <span>聊天室</span>
+                            <div>
+                                <button class="btn btn-sm btn-light" onclick="loadMessages()" id="refresh-btn">
+                                    <span id="refresh-text">刷新消息</span>
+                                    <span id="loading-spinner" class="spinner-border spinner-border-sm d-none"></span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body p-2" style="height: 300px; overflow-y: auto" id="chat-box">
+                            <!-- 消息通过JavaScript动态加载 -->
+                        </div>
+                        <div class="card-footer">
+                            <form id="chat-form" class="input-group">
+                                <input type="text" name="message" class="form-control" placeholder="输入消息..." required>
+                                <button type="submit" class="btn btn-primary">
+                                    <span id="submit-text">发送</span>
+                                    <span id="submit-spinner" class="spinner-border spinner-border-sm d-none"></span>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.bootcdn.net/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script>
+    // 完全移除自动刷新机制
+    let isRequesting = false;
+    let isSubmitting = false;
+
+    function updateButtonState(button, textElement, spinner, isLoading) {
+        button.disabled = isLoading;
+        textElement.textContent = isLoading ? '处理中...' : textElement.dataset.originalText;
+        spinner.classList.toggle('d-none', !isLoading);
+    }
+
+    async function loadMessages() {
+        if(isRequesting) return;
+        isRequesting = true;
+
+        const refreshBtn = document.getElementById('refresh-btn');
+        const refreshText = document.getElementById('refresh-text');
+        const loadingSpinner = document.getElementById('loading-spinner');
+        const chatBox = document.getElementById('chat-box');
+
+        updateButtonState(refreshBtn, refreshText, loadingSpinner, true);
+        chatBox.innerHTML = '<div class="text-center py-3">加载中...</div>';
+
+        try {
+            const response = await fetch('/get_messages');
+            if(!response.ok) throw new Error();
+            const data = await response.json();
+
+            chatBox.innerHTML = data.messages.map(msg => `
+                <div class="mb-2 position-relative">
+                    <small class="text-muted">${msg.time}</small>
+                    <div class="alert alert-secondary p-2 mb-0">
+                        ${msg.content}
+                        <button class="btn btn-sm btn-link p-0 copy-btn"
+                                style="position: absolute; right: 8px; top: 8px"
+                                title="复制内容">
+                            ⎘
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+
+            chatBox.scrollTop = chatBox.scrollHeight;
+        } catch {
+            chatBox.innerHTML = '<div class="text-danger text-center py-3">加载失败</div>';
+        } finally {
+            updateButtonState(refreshBtn, refreshText, loadingSpinner, false);
+            isRequesting = false;
+        }
+    }
+
+    // 表单提交处理
+    document.getElementById('chat-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        if(isSubmitting) return;
+        isSubmitting = true;
+
+        const formData = new FormData(this);
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const submitText = document.getElementById('submit-text');
+        const submitSpinner = document.getElementById('submit-spinner');
+
+        updateButtonState(submitBtn, submitText, submitSpinner, true);
+
+        try {
+            const response = await fetch('/chat', {
+                method: 'POST',
+                body: formData
+            });
+
+            if(!response.ok) throw new Error();
+            await loadMessages();
+            this.reset();
+        } catch {
+            alert('消息发送失败');
+        } finally {
+            updateButtonState(submitBtn, submitText, submitSpinner, false);
+            isSubmitting = false;
+        }
+    });
+
+    // 复制功能
+    document.addEventListener('click', (e) => {
+        if(e.target.classList.contains('copy-btn')) {
+            const content = e.target.parentElement.textContent.trim().slice(0, -1);
+            navigator.clipboard.writeText(content)
+                .then(() => alert('已复制到剪贴板'))
+                .catch(() => alert('复制失败'));
+        }
+    });
+
+    // 初始化页面时加载一次
+    document.addEventListener('DOMContentLoaded', () => {
+        loadMessages();
+        // 设置按钮初始文本
+        document.getElementById('refresh-text').dataset.originalText = '刷新消息';
+        document.getElementById('submit-text').dataset.originalText = '发送';
+    });
+
+
+    // 增强拖放处理
+dropZone.addEventListener('drop', (e) => {
+    e.preventDefault()
+    dropZone.classList.remove('dragover')
+    const items = e.dataTransfer.items
+    
+    // 处理文件夹拖放
+    if(items && items[0].webkitGetAsEntry) {
+        const entry = items[0].webkitGetAsEntry()
+        if(entry.isDirectory) {
+            document.getElementById('fileInput').webkitdirectory = true
+        }
+    }
+    
+    if(e.dataTransfer.files.length) {
+        fileInput.files = e.dataTransfer.files
+        document.getElementById('uploadForm').submit()
+    }
+})
+
+    </script>
+</body>
+</html>
